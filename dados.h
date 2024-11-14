@@ -7,7 +7,8 @@ typedef struct movimento movimento;
 struct movimento {
 	char data[12];
 	char descricao[100];
-    fracao reais, bitcoin, etherium, ripple;
+    fracao reais;
+	fracao* carteira;
 };
 
 // guarda os valores referentes a uma conta;
@@ -16,7 +17,8 @@ struct registro {
     char cpf[13];
     char senha[8];
     char nome[100];
-    fracao reais, bitcoin, etherium, ripple;
+    fracao reais;
+	fracao* carteira;
 	int quantidade_movimentos;
 	movimento* movimentos;
 };
@@ -29,14 +31,21 @@ struct cotacao {
     fracao bitcoin_taxa_venda, etherium_taxa_venda, ripple_taxa_venda;
 };
 
-void ler_registro(registro* a, FILE* base);
-registro* ler_base(int* quantidade_registros);
+typedef struct moeda moeda;
+struct moeda {
+	char nome[100];
+	char apelido[100];
+	fracao taxa_compra, taxa_venda, valor;
+};
 
-void gravar_registro(registro* a, FILE* base);
-void gravar_base(registro* registros, int quantidade_registros);
+void ler_registro(registro* a, FILE* base, int quantidade_moedas);
+registro* ler_base(int* quantidade_registros, int quantidade_moedas);
 
-cotacao ler_cotacao();
-void gravar_cotacao();
+void gravar_registro(registro* a, FILE* base, int quantidade_moedas);
+void gravar_base(registro* registros, int quantidade_registros, int quantidade_moedas);
+
+moeda* ler_moedas(int* quantidade_moedas);
+void gravar_moedas(moeda* moedas, int quantidade_moedas);
 
 #endif
 

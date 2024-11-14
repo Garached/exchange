@@ -7,15 +7,16 @@ typedef struct movimento movimento;
 typedef struct registro registro;
 
 // le um unico registro do arquivo base;
-void ler_registro(registro* a, FILE* base) {
+void ler_registro(registro* a, FILE* base, int quantidade_moedas) {
     fread(a->cpf, sizeof(char), 12, base);
     fread(a->senha, sizeof(char), 7, base);
     fread(a->nome, sizeof(char), sizeof(a->nome), base);
     
     freceber(base, &a->reais);
-    freceber(base, &a->bitcoin);
-    freceber(base, &a->etherium);
-    freceber(base, &a->ripple);
+    a->carteira = malloc(quantidade_moedas * sizeof(fracao));
+	for (int i = 0; i < quantidade_moedas; i++) {
+		freceber(base, &a->carteira[i]);
+	}
     
     fread(&a->quantidade_movimentos, sizeof(int), 1, base);
     a->movimentos = malloc(a->quantidade_movimentos * sizeof(movimento));
@@ -24,21 +25,22 @@ void ler_registro(registro* a, FILE* base) {
         fread(a->movimentos[i].data, sizeof(char), 12, base);
         fread(a->movimentos[i].descricao, sizeof(char), sizeof(a->movimentos[i].descricao), base);
         freceber(base, &a->movimentos[i].reais);
-        freceber(base, &a->movimentos[i].bitcoin);
-        freceber(base, &a->movimentos[i].etherium);
-        freceber(base, &a->movimentos[i].ripple);
+		a->movimentos[i].carteira = malloc(quantidade_moedas * sizeof(fracao));
+		for (int j = 0; j < quantidade_moedas; j++) {
+			freceber(base, &a->movimentos[i].carteira[j]);
+		}
     }
 }
 
 // le a base toda em binario;
-registro* ler_base(int* quantidade_registros) {
+registro* ler_base(int* quantidade_registros, int quantidade_moedas) {
     FILE* base = fopen("base_registros.bin", "rb");
 
     fread(quantidade_registros, sizeof(int), 1, base);
     registro* registros = malloc(*quantidade_registros * sizeof(registro));
 
     for (int i = 0; i < *quantidade_registros; i++) {
-        ler_registro(&registros[i], base);
+        ler_registro(&registros[i], base, quantidade_moedas);
     }
 
     fclose(base);
@@ -46,69 +48,70 @@ registro* ler_base(int* quantidade_registros) {
 }
 
 // grava um unico registro no arquivo base;
-void gravar_registro(registro* a, FILE* base) {
+void gravar_registro(registro* a, FILE* base, int quantidade_moedas) {
     fwrite(a->cpf, sizeof(char), 12, base);
     fwrite(a->senha, sizeof(char), 7, base);
     fwrite(a->nome, sizeof(char), sizeof(a->nome), base);
     
     fprintar(base, a->reais);
-    fprintar(base, a->bitcoin);
-    fprintar(base, a->etherium);
-    fprintar(base, a->ripple);
+	for (int i = 0; i < quantidade_moedas; i++) {
+		fprintar(base, a->carteira[i]);
+	}
     
     fwrite(&a->quantidade_movimentos, sizeof(int), 1, base);
     for (int i = 0; i < a->quantidade_movimentos; i++) {
         fwrite(a->movimentos[i].data, sizeof(char), 12, base);
         fwrite(a->movimentos[i].descricao, sizeof(char), sizeof(a->movimentos[i].descricao), base);
         fprintar(base, a->movimentos[i].reais);
-        fprintar(base, a->movimentos[i].bitcoin);
-        fprintar(base, a->movimentos[i].etherium);
-        fprintar(base, a->movimentos[i].ripple);
+		for (int j = 0; j < quantidade_moedas; j++) {
+			fprintar(base, a->movimentos[i].carteira[i]);
+		}
+		free(a->movimentos[i].carteira);
     }
+	free(a->movimentos);
 }
 
 // grava a base toda em binario;
-void gravar_base(registro* registros, int quantidade_registros) {
+void gravar_base(registro* registros, int quantidade_registros, int quantidade_moedas) {
     FILE* base = fopen("base_registros.bin", "wb");
 
     fwrite(&quantidade_registros, sizeof(int), 1, base);
     for (int i = 0; i < quantidade_registros; i++) {
-        gravar_registro(&registros[i], base);
+        gravar_registro(&registros[i], base, quantidade_moedas);
     }
-
     fclose(base);
+	free(registros);
 }
 
-cotacao ler_cotacao() {
-	FILE* base_cotacao = fopen("base_cotacao.bin", "rb");
-	cotacao	resposta;
+moeda* ler_moedas(int* quantidade_moedas) {
+    FILE* base = fopen("base_moedas.bin", "rb");
+	
+    fread(quantidade_moedas, sizeof(int), 1, base);
+	moeda* moedas = malloc(*quantidade_moedas * sizeof(moeda));
 
-	freceber(base_cotacao, &resposta.bitcoin);
-	freceber(base_cotacao, &resposta.bitcoin_taxa_compra);
-	freceber(base_cotacao, &resposta.bitcoin_taxa_venda);
+	for (int i = 0; i < *quantidade_moedas; i++) {
+		fread(moedas[i].nome, sizeof(char), sizeof(moedas[i].nome), base);
+		fread(moedas[i].apelido, sizeof(char), sizeof(moedas[i].apelido), base);
+		freceber(base, &moedas[i].valor);
+		freceber(base, &moedas[i].taxa_compra);
+		freceber(base, &moedas[i].taxa_venda);
+	}
 
-	freceber(base_cotacao, &resposta.etherium);
-	freceber(base_cotacao, &resposta.etherium_taxa_compra);
-	freceber(base_cotacao, &resposta.etherium_taxa_venda);
-
-	freceber(base_cotacao, &resposta.ripple);
-	freceber(base_cotacao, &resposta.ripple_taxa_compra);
-	freceber(base_cotacao, &resposta.ripple_taxa_venda);
-	return resposta;
+	fclose(base);
+	return moedas;
 }
 
-void gravar_cotacao(cotacao cotacao_atual) {
-	FILE* base_cotacao = fopen("base_cotacao.bin", "wb");
+void gravar_moedas(moeda* moedas, int quantidade_moedas) {
+    FILE* base = fopen("base_moedas.bin", "wb");
 
-	fprintar(base_cotacao, cotacao_atual.bitcoin);
-	fprintar(base_cotacao, cotacao_atual.bitcoin_taxa_compra);
-	fprintar(base_cotacao, cotacao_atual.bitcoin_taxa_venda);
-
-	fprintar(base_cotacao, cotacao_atual.etherium);
-	fprintar(base_cotacao, cotacao_atual.etherium_taxa_compra);
-	fprintar(base_cotacao, cotacao_atual.etherium_taxa_venda);
-
-	fprintar(base_cotacao, cotacao_atual.ripple);
-	fprintar(base_cotacao, cotacao_atual.ripple_taxa_compra);
-	fprintar(base_cotacao, cotacao_atual.ripple_taxa_venda);
+    fwrite(&quantidade_moedas, sizeof(int), 1, base);
+    for (int i = 0; i < quantidade_moedas; i++) {
+		fwrite(moedas[i].nome, sizeof(char), sizeof(moedas[i].nome), base);
+		fwrite(moedas[i].apelido, sizeof(char), sizeof(moedas[i].apelido), base);
+		fprintar(base, moedas[i].valor);
+		fprintar(base, moedas[i].taxa_compra);
+		fprintar(base, moedas[i].taxa_venda);
+    }
+    fclose(base);
+	free(moedas);
 }

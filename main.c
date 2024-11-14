@@ -58,7 +58,7 @@ int cpf_valido(char* cpf) {
 	return (cpf[9] - '0') == primeiro && (cpf[10] - '0') == segundo;
 }
 
-registro* novo_usuario(registro** registros, int* quantidade_registros) {
+registro* novo_usuario(registro** registros, int* quantidade_registros, int quantidade_moedas) {
     registro novo;
 
     int cpf_ok = 0;
@@ -98,9 +98,10 @@ registro* novo_usuario(registro** registros, int* quantidade_registros) {
     fgets(novo.nome, sizeof(novo.nome), stdin);
 
     novo.reais = fracao_(0, 1);
-    novo.bitcoin = fracao_(0, 1);
-    novo.etherium = fracao_(0, 1);
-    novo.ripple = fracao_(0, 1);
+	novo.carteira = malloc(quantidade_moedas * sizeof(fracao));
+	for (int i = 0; i < quantidade_moedas; i++) {
+		novo.carteira[i] = fracao_(0, 1);
+	}
     novo.quantidade_movimentos = 0;
     novo.movimentos = NULL;
 
@@ -112,28 +113,24 @@ registro* novo_usuario(registro** registros, int* quantidade_registros) {
     return &(*registros)[(*quantidade_registros) - 1];
 }
 
-void consultar_saldo(registro* usuario) {
+void consultar_saldo(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	printf("[i] saldo atual de: %s", usuario->nome);
 	printf("    .reais: "), printar(usuario->reais, '\n');
-	printf("    .bitcoin: "), printar(usuario->bitcoin, '\n');
-	printf("    .etherium: "), printar(usuario->etherium, '\n');
-	printf("    .ripple: "), printar(usuario->ripple, '\n');
+	for (int i = 0; i < quantidade_moedas; i++) {
+		printf("    .%s: ", moedas[i].nome), printar(usuario->carteira[i], '\n');
+	}
 }
 
-void consultar_cotacao(cotacao cotacao_atual) {
+void consultar_moedas(moeda* moedas, int quantidade_moedas) {
 	puts("[i] cotacao atual:");
-	printf("    [bit] cotacao: "), printar(cotacao_atual.bitcoin, '\n');
-	printf("           compra: "), printar(cotacao_atual.bitcoin_taxa_compra, '\n');
-	printf("            venda: "), printar(cotacao_atual.bitcoin_taxa_venda, '\n');
-	printf("    [eth] cotacao: "), printar(cotacao_atual.etherium, '\n');
-	printf("           compra: "), printar(cotacao_atual.etherium_taxa_compra, '\n');
-	printf("            venda: "), printar(cotacao_atual.etherium_taxa_venda, '\n');
-	printf("    [rip] cotacao: "), printar(cotacao_atual.ripple, '\n');
-	printf("           compra: "), printar(cotacao_atual.ripple_taxa_compra, '\n');
-	printf("            venda: "), printar(cotacao_atual.ripple_taxa_venda, '\n');
+	for (int i = 0; i < quantidade_moedas; i++) {
+		printf("    [%s] cotacao: ", moedas[i].apelido), printar(moedas[i].valor, '\n');
+		printf("      taxa compra: "), printar(moedas[i].taxa_compra, '\n');
+		printf("       taxa venda: "), printar(moedas[i].taxa_venda, '\n');
+	}
 }
 
-void consultar_extrato(registro* usuario) {
+void consultar_extrato(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	printf("[i] extrato atual de: %s", usuario->nome);
 	printf("[i] quantidade de movimentos: %d\n", usuario->quantidade_movimentos);
 
@@ -141,13 +138,13 @@ void consultar_extrato(registro* usuario) {
 		printf("[i] movimento em %s:\n", usuario->movimentos[i].data);
 		printf("    .descricao: %s\n", usuario->movimentos[i].descricao);
 		printf("    .reais: "), printar(usuario->movimentos[i].reais, '\n');
-		printf("    .bitcoin: "), printar(usuario->movimentos[i].bitcoin, '\n');
-		printf("    .etherium: "), printar(usuario->movimentos[i].etherium, '\n');
-		printf("    .ripple: "), printar(usuario->movimentos[i].ripple, '\n');
+		for (int j = 0; j < quantidade_moedas; j++) {
+			printf("    .%s: ", moedas[j].nome), printar(usuario->movimentos[i].carteira[j], '\n');
+		}
 	}
 }
 
-void novo_movimento(registro* usuario, char* descricao) {
+void novo_movimento(registro* usuario, char* descricao, moeda* moedas, int quantidade_moedas) {
 	usuario->movimentos = realloc(usuario->movimentos, (usuario->quantidade_movimentos + 1) * sizeof(movimento));
 	movimento novo;
 
@@ -162,16 +159,17 @@ void novo_movimento(registro* usuario, char* descricao) {
 	strcpy(novo.data, buffer);
 	strcpy(novo.descricao, descricao);
 	novo.reais = usuario->reais;
-	novo.bitcoin = usuario->bitcoin;
-	novo.etherium = usuario->etherium;
-	novo.ripple = usuario->ripple;
+	novo.carteira = malloc(quantidade_moedas * sizeof(fracao));
+	for (int i = 0; i < quantidade_moedas; i++) {
+		novo.carteira[i] = usuario->carteira[i];
+	}
 	usuario->movimentos[usuario->quantidade_movimentos] = novo;
 	usuario->quantidade_movimentos++;
 }
 
-void depositar_reais(registro* usuario) {
+void depositar_reais(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	puts("[+] depositar reais!\n");
-	consultar_saldo(usuario);
+	consultar_saldo(usuario, moedas, quantidade_moedas);
 
 	int ok = 0;
 	fracao depositado;
@@ -190,12 +188,12 @@ void depositar_reais(registro* usuario) {
 	somar(&usuario->reais, depositado);
 	char descricao[100];
 	snprintf(descricao, sizeof(descricao), "deposito de %d/%d reais", depositado.numerador, depositado.denominador);
-	novo_movimento(usuario, descricao);
+	novo_movimento(usuario, descricao, moedas, quantidade_moedas);
 }
 
-void sacar_reais(registro* usuario) {
+void sacar_reais(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	puts("[+] sacar reais!\n");
-	consultar_saldo(usuario);
+	consultar_saldo(usuario, moedas, quantidade_moedas);
 
 	int ok = 0;
 	fracao sacado;
@@ -219,39 +217,31 @@ void sacar_reais(registro* usuario) {
 	subtrair(&(usuario->reais), sacado);
 	char descricao[100];
 	snprintf(descricao, sizeof(descricao), "saque de %d/%d reais", sacado.numerador, sacado.denominador);
-	novo_movimento(usuario, descricao);
+	novo_movimento(usuario, descricao, moedas, quantidade_moedas);
 }
 
-void comprar_criptomoedas(registro* usuario, cotacao cotacao_atual) {
+void comprar_criptomoedas(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	puts("[+] comprar criptomoedas!\n");
-	consultar_cotacao(cotacao_atual);
-	consultar_saldo(usuario);
+	consultar_saldo(usuario, moedas, quantidade_moedas);
+	consultar_moedas(moedas, quantidade_moedas);
 
 	fracao quantidade_informada, preco, taxa;
 	fracao* moeda_usuario;
 	int ok_moeda = 0;
 	char selecao[3];
 	while (!ok_moeda) {
-		printf("[?] informe a moeda a ser comprada (bit, eth ou rip): ");
+		printf("[?] informe a moeda a ser comprada: ");
 		scanf("%3s", selecao); getchar();
 
-		ok_moeda = 1;
-		if (!strcmp(selecao, "bit")) {
-			moeda_usuario = &usuario->bitcoin;
-			preco = cotacao_atual.bitcoin;
-			taxa = cotacao_atual.bitcoin_taxa_compra;
-		} else if (!strcmp(selecao, "eth")) {
-			moeda_usuario = &usuario->etherium;
-			preco = cotacao_atual.etherium;
-			taxa = cotacao_atual.etherium_taxa_compra;
-		} else if (!strcmp(selecao, "rip")) {
-			moeda_usuario = &usuario->ripple;
-			preco = cotacao_atual.ripple;
-			taxa = cotacao_atual.ripple_taxa_compra;
-		} else {
-			ok_moeda = 0;
-			puts("[e] moeda invalida!");
+		for (int i = 0; i < quantidade_moedas; i++) {
+			if (!strcmp(selecao, moedas[i].apelido)) {
+				ok_moeda = 1;
+				preco = moedas[i].valor;
+				taxa = moedas[i].taxa_compra;
+				moeda_usuario = &usuario->carteira[i];
+			}
 		}
+		if (!ok_moeda) puts("[e] moeda invalida!");
 	}
 
 	// total = quantidade * preco * (1 + taxa_compra);
@@ -277,39 +267,31 @@ void comprar_criptomoedas(registro* usuario, cotacao cotacao_atual) {
 	char descricao[14];
 	snprintf(descricao, 14, "compra de %s", selecao);
 
-	novo_movimento(usuario, descricao);
+	novo_movimento(usuario, descricao, moedas, quantidade_moedas);
 }
 
-void vender_criptomoedas(registro* usuario, cotacao cotacao_atual) {
+void vender_criptomoedas(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	puts("[+] vender criptomoedas!\n");
-	consultar_cotacao(cotacao_atual);
-	consultar_saldo(usuario);
+	consultar_saldo(usuario, moedas, quantidade_moedas);
+	consultar_moedas(moedas, quantidade_moedas);
 
 	fracao quantidade_informada, preco, taxa;
 	fracao* moeda_usuario;
 	int ok_moeda = 0;
 	char selecao[3];
 	while (!ok_moeda) {
-		printf("[?] informe a moeda a ser vendida (bit, eth ou rip): ");
+		printf("[?] informe a moeda a ser vendida: ");
 		scanf("%3s", selecao); getchar();
 
-		ok_moeda = 1;
-		if (!strcmp(selecao, "bit")) {
-			moeda_usuario = &usuario->bitcoin;
-			preco = cotacao_atual.bitcoin;
-			taxa = cotacao_atual.bitcoin_taxa_venda;
-		} else if (!strcmp(selecao, "eth")) {
-			moeda_usuario = &usuario->etherium;
-			preco = cotacao_atual.etherium;
-			taxa = cotacao_atual.etherium_taxa_venda;
-		} else if (!strcmp(selecao, "rip")) {
-			moeda_usuario = &usuario->ripple;
-			preco = cotacao_atual.ripple;
-			taxa = cotacao_atual.ripple_taxa_venda;
-		} else {
-			ok_moeda = 0;
-			puts("[e] moeda invalida!");
+		for (int i = 0; i < quantidade_moedas; i++) {
+			if (!strcmp(selecao, moedas[i].apelido)) {
+				ok_moeda = 1;
+				preco = moedas[i].valor;
+				taxa = moedas[i].taxa_venda;
+				moeda_usuario = &usuario->carteira[i];
+			}
 		}
+		if (!ok_moeda) puts("[e] moeda invalida!");
 	}
 
 	fracao quantidade_maxima = *moeda_usuario;
@@ -334,27 +316,29 @@ void vender_criptomoedas(registro* usuario, cotacao cotacao_atual) {
 	char descricao[14];
 	snprintf(descricao, 14, "compra de %s", selecao);
 
-	novo_movimento(usuario, descricao);
+	novo_movimento(usuario, descricao, moedas, quantidade_moedas);
 }
 
 int percentual_aleatorio() {
 	return rand() % 11 - 5;
 }
 
-void atualizar_cotacao(cotacao* cotacao_atual) {
+void atualizar_moedas(moeda* moedas, int quantidade_moedas) {
 	printf("[i] antes:\n");
-	printar(cotacao_atual->bitcoin, '\n');
-	printar(cotacao_atual->etherium, '\n');
-	printar(cotacao_atual->ripple, '\n');
+	for (int i = 0; i < quantidade_moedas; i++) {
+		printf("   [%s]: ", moedas[i].apelido);
+		printar(moedas[i].valor, '\n');
+	}
 
-	multiplicar(&cotacao_atual->bitcoin, fracao_(percentual_aleatorio() + 100, 100));
-	multiplicar(&cotacao_atual->etherium, fracao_(percentual_aleatorio() + 100, 100));
-	multiplicar(&cotacao_atual->ripple, fracao_(percentual_aleatorio() + 100, 100));
+	for (int i = 0; i < quantidade_moedas; i++) {
+		multiplicar(&moedas[i].valor, fracao_(percentual_aleatorio() + 100, 100));
+	}
 
 	printf("[i] depois:\n");
-	printar(cotacao_atual->bitcoin, '\n');
-	printar(cotacao_atual->etherium, '\n');
-	printar(cotacao_atual->ripple, '\n');
+	for (int i = 0; i < quantidade_moedas; i++) {
+		printf("   [%s]: ", moedas[i].apelido);
+		printar(moedas[i].valor, '\n');
+	}
 }
 
 void limpar_terminal() {
@@ -374,10 +358,12 @@ void retorno() {
 
 int main() {
 	srand(time(NULL));
+	int quantidade_moedas;
+	moeda* moedas = ler_moedas(&quantidade_moedas);
+
 	int quantidade_registros;
-    registro* registros = ler_base(&quantidade_registros);
+    registro* registros = ler_base(&quantidade_registros, quantidade_moedas);
 	registro* usuario;
-	cotacao cotacao_atual = ler_cotacao();
 
 	limpar_terminal();
 	puts("[+] menu inicial!");
@@ -401,15 +387,13 @@ int main() {
 				}
 				break;
 			case 2:
-				usuario = novo_usuario(&registros, &quantidade_registros);
+				usuario = novo_usuario(&registros, &quantidade_registros, quantidade_moedas);
 				break;
 			case 3 : 
 				sair = 1;
 				break;
 			default:
-				puts("[e] selecao invalida! informe um inteiro que pertence a [1, 2]");
-				logado = 0;
-		}
+				puts("[e] selecao invalida! informe um inteiro que pertence a [1, 2]"); logado = 0; }
 	}
 
 	limpar_terminal();
@@ -430,31 +414,31 @@ int main() {
 		if (selecao >= 1 && selecao <= 8) limpar_terminal();
 		switch (selecao) {
 			case 1:
-				consultar_saldo(usuario);
+				consultar_saldo(usuario, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 2:
-				consultar_extrato(usuario);
+				consultar_extrato(usuario, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 3:
-				depositar_reais(usuario);
+				depositar_reais(usuario, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 4:
-				sacar_reais(usuario);
+				sacar_reais(usuario, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 5: 
-				comprar_criptomoedas(usuario, cotacao_atual);
+				comprar_criptomoedas(usuario, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 6: 
-				vender_criptomoedas(usuario, cotacao_atual);
+				vender_criptomoedas(usuario, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 7:
-				atualizar_cotacao(&cotacao_atual);
+				atualizar_moedas(moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 8:
@@ -465,7 +449,7 @@ int main() {
 		}
 	}
 
-	gravar_base(registros, quantidade_registros);
-	gravar_cotacao(cotacao_atual);
+	gravar_moedas(moedas, quantidade_moedas);
+	gravar_base(registros, quantidade_registros, quantidade_moedas);
     return 0;
 }
