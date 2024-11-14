@@ -56,60 +56,6 @@ int cpf_valido(char* cpf) {
 	return (cpf[9] - '0') == primeiro && (cpf[10] - '0') == segundo;
 }
 
-registro* novo_usuario(registro** registros, int* quantidade_registros, int quantidade_moedas) {
-    registro novo;
-
-    int cpf_ok = 0;
-    while (!cpf_ok) {
-        printf("[?] informe o novo cpf: ");
-        scanf("%11s", novo.cpf);
-        getchar();
-
-        cpf_ok = 1;
-        for (int i = 0; i < 11 && cpf_ok; i++) {
-            cpf_ok &= (novo.cpf[i] >= '0' && novo.cpf[i] <= '9');
-        }
-
-		if (!cpf_ok) {
-			puts("[e] valor invalido! o cpf deve ter 11 digitos numericos!");
-		} else if (!cpf_valido(novo.cpf)) {
-			puts("[e] cpf nao existe!");
-			cpf_ok = 0;
-		}
-    }
-
-    int senha_ok = 0;
-    while (!senha_ok) {
-        printf("[?] informe a nova senha: ");
-        scanf("%6s", novo.senha);
-
-        senha_ok = 1;
-        for (int i = 0; i < 6 && senha_ok; i++) {
-            senha_ok &= (novo.senha[i] >= '0' && novo.senha[i] <= '9');
-        }
-
-        if (!senha_ok) puts("[e] valor invalido! a senha deve ter 6 digitos numericos!");
-    }
-
-    printf("[?] informe o novo nome: ");
-    getchar();
-    fgets(novo.nome, sizeof(novo.nome), stdin);
-
-    novo.reais = fracao_(0, 1);
-	novo.carteira = malloc(quantidade_moedas * sizeof(fracao));
-	for (int i = 0; i < quantidade_moedas; i++) {
-		novo.carteira[i] = fracao_(0, 1);
-	}
-    novo.quantidade_movimentos = 0;
-    novo.movimentos = NULL;
-
-    *registros = realloc(*registros, (*quantidade_registros + 1) * sizeof(registro));
-    
-    (*registros)[*quantidade_registros] = novo;
-    (*quantidade_registros)++;    
-
-    return &(*registros)[(*quantidade_registros) - 1];
-}
 
 void consultar_saldo(registro* usuario, moeda* moedas, int quantidade_moedas) {
 	printf("[i] saldo atual de: %s", usuario->nome);
@@ -203,6 +149,129 @@ registro* escolhe_investidor(registro* registros, int quantidade_registros) {
 	return usuario;
 }
 
+registro* cadastrar_investidor(registro** registros, int* quantidade_registros, int quantidade_moedas) {
+    registro novo;
+
+    int cpf_ok = 0;
+    while (!cpf_ok) {
+        printf("[?] informe o novo cpf: ");
+        scanf("%11s", novo.cpf);
+        getchar();
+
+        cpf_ok = 1;
+        for (int i = 0; i < 11 && cpf_ok; i++) {
+            cpf_ok &= (novo.cpf[i] >= '0' && novo.cpf[i] <= '9');
+        }
+
+		if (!cpf_ok) {
+			puts("[e] valor invalido! o cpf deve ter 11 digitos numericos!");
+		} else if (!cpf_valido(novo.cpf)) {
+			puts("[e] cpf nao existe!");
+			cpf_ok = 0;
+		}
+    }
+
+    int senha_ok = 0;
+    while (!senha_ok) {
+        printf("[?] informe a nova senha: ");
+        scanf("%6s", novo.senha);
+
+        senha_ok = 1;
+        for (int i = 0; i < 6 && senha_ok; i++) {
+            senha_ok &= (novo.senha[i] >= '0' && novo.senha[i] <= '9');
+        }
+
+        if (!senha_ok) puts("[e] valor invalido! a senha deve ter 6 digitos numericos!");
+    }
+
+    printf("[?] informe o novo nome: ");
+    getchar();
+    fgets(novo.nome, sizeof(novo.nome), stdin);
+
+    novo.reais = fracao_(0, 1);
+	novo.carteira = malloc(quantidade_moedas * sizeof(fracao));
+	for (int i = 0; i < quantidade_moedas; i++) {
+		novo.carteira[i] = fracao_(0, 1);
+	}
+    novo.quantidade_movimentos = 0;
+    novo.movimentos = NULL;
+
+    *registros = realloc(*registros, (*quantidade_registros + 1) * sizeof(registro));
+    
+    (*registros)[*quantidade_registros] = novo;
+    (*quantidade_registros)++;    
+
+    return &(*registros)[(*quantidade_registros) - 1];
+}
+
+void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros, int quantidade_registros) {
+	moeda nova_moeda;
+
+    int nome_ok = 0;
+    while (!nome_ok) {
+        printf("[?] informe o nova_moeda nome: ");
+		fgets(nova_moeda.nome, sizeof(nova_moeda.nome), stdin);
+        getchar();
+
+        nome_ok = 1;
+		for (int i = 0; i < *quantidade_moedas && nome_ok; i++) {
+			nome_ok &= strcmp(nova_moeda.nome, (*moedas[i]).nome);
+		}
+		if (!nome_ok) puts("[e] nome ja cadastrado");
+    }
+	
+    int apelido_ok = 0;
+    while (!apelido_ok) {
+        printf("[?] informe o nova_moeda apelido: ");
+		fgets(nova_moeda.apelido, sizeof(nova_moeda.apelido), stdin);
+        getchar();
+
+        apelido_ok = 1;
+		for (int i = 0; i < *quantidade_moedas && apelido_ok; i++) {
+			apelido_ok &= strcmp(nova_moeda.apelido, (*moedas[i]).apelido);
+		}
+		if (!apelido_ok) puts("[e] apelido ja cadastrado");
+    }
+
+	int taxa_compra_ok = 0;	
+	while (!taxa_compra_ok) {
+        printf("[?] informe o nova taxa de compra: ");
+		receber(&nova_moeda.taxa_compra);
+
+		taxa_compra_ok = (maior(nova_moeda.taxa_compra, fracao_(0, 1)) || igual(nova_moeda.taxa_compra, fracao_(0, 1))) &&
+						 (menor(nova_moeda.taxa_compra, fracao_(1, 1)) || igual(nova_moeda.taxa_compra, fracao_(1, 1)));
+		if (!taxa_compra_ok) puts("[e] taxa de compra deve estar entre 0 e 1 inclusive");
+	}
+
+	int taxa_venda_ok = 0;	
+	while (!taxa_venda_ok) {
+        printf("[?] informe o nova taxa de venda: ");
+		receber(&nova_moeda.taxa_venda);
+
+		taxa_venda_ok = (maior(nova_moeda.taxa_venda, fracao_(0, 1)) || igual(nova_moeda.taxa_venda, fracao_(0, 1))) &&
+						(menor(nova_moeda.taxa_venda, fracao_(1, 1)) || igual(nova_moeda.taxa_venda, fracao_(1, 1)));
+		if (!taxa_venda_ok) puts("[e] taxa de venda deve estar entre 0 e 1 inclusive");
+	}
+
+	int valor_ok = 0;	
+	while (!valor_ok) {
+        printf("[?] informe o nova valor: ");
+		receber(&nova_moeda.valor);
+
+		valor_ok = maior(nova_moeda.taxa_venda, fracao_(0, 1));
+		if (!valor_ok) puts("[e] o valor da moeda deve ser > 1");
+	}
+
+    *moedas = realloc(*moedas, (*quantidade_moedas + 1) * sizeof(moeda));
+	for (int i = 0; i < quantidade_registros; i++) {
+		registros[i].carteira = realloc(registros[i].carteira, (*quantidade_moedas + 1) * sizeof(moeda));
+		registros[i].carteira[(*quantidade_moedas)] = fracao_(0, 1);
+	}
+    
+    (*moedas)[*quantidade_moedas] = nova_moeda;
+    (*quantidade_moedas)++;    
+}
+
 int main() {
 	srand(time(NULL));
 	int quantidade_moedas;
@@ -235,7 +304,7 @@ int main() {
 				}
 				break;
 			case 2:
-				usuario = novo_usuario(&registros, &quantidade_registros, quantidade_moedas);
+				usuario = cadastrar_investidor(&registros, &quantidade_registros, quantidade_moedas);
 				break;
 			case 3 : 
 				sair = 1;
@@ -262,6 +331,7 @@ int main() {
 		if (selecao >= 1 && selecao <= 8) limpar_terminal();
 		switch (selecao) {
 			case 1:
+				cadastrar_investidor(&registros, &quantidade_registros, quantidade_moedas);
 				retorno();
 				break;
 			case 2:
