@@ -7,9 +7,7 @@
 
 registro* login(registro* registros, int quantidade_registros) {
     registro* usuario = NULL;
-    while (1) {
-        char cpf_informado[12];
-        printf("[?] informe o seu cpf: ");
+    while (1) { char cpf_informado[12]; printf("[?] informe o seu cpf: ");
         scanf("%11s", cpf_informado);
 		getchar();
 
@@ -182,6 +180,29 @@ void retorno() {
 	limpar_terminal();
 }
 
+registro* escolhe_investidor(registro* registros, int quantidade_registros) {
+	puts("[i] investidores cadastrados:");
+	for (int i = 0; i < quantidade_registros; i++) {
+		printf("   [%d] %s, %s", i+1, registros[i].cpf, registros[i].nome);
+	}
+
+    registro* usuario = NULL;
+    while (1) { char cpf_informado[12]; printf("[?] informe o cpf do investidor: ");
+        scanf("%11s", cpf_informado);
+		getchar();
+
+        for (int i = 0; i < quantidade_registros && usuario == NULL; i++) {
+            if (strcmp(registros[i].cpf, cpf_informado) == 0) {
+                usuario = &registros[i];
+            }
+        }
+
+        if (usuario != NULL) break;
+        else puts("[e] cpf nao encontrado, tente novamente.");
+    }
+	return usuario;
+}
+
 int main() {
 	srand(time(NULL));
 	int quantidade_moedas;
@@ -190,6 +211,7 @@ int main() {
 	int quantidade_registros;
     registro* registros = ler_base(&quantidade_registros, quantidade_moedas);
 	registro* usuario;
+	registro* investidor;
 
 	limpar_terminal();
 	puts("[+] menu administrador!");
@@ -252,9 +274,13 @@ int main() {
 				retorno();
 				break;
 			case 5: 
+				investidor = escolhe_investidor(registros, quantidade_registros);
+				consultar_saldo(investidor, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 6: 
+				investidor = escolhe_investidor(registros, quantidade_registros);
+				consultar_extrato(investidor, moedas, quantidade_moedas);
 				retorno();
 				break;
 			case 7:
