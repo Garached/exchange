@@ -13,9 +13,7 @@ fracao fracao_(int numerador_, int denominador_) {
 	
 	int g = gcd(abs(numerador_), denominador_);
 	res.numerador = numerador_ / g;
-	res.denominador = denominador_ / g;
-	return res;
-}
+	res.denominador = denominador_ / g; return res; }
 
 fracao inverter_(fracao a) {
 	return fracao_(a.denominador, a.numerador);
