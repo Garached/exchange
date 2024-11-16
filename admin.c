@@ -210,12 +210,13 @@ void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros
     int nome_ok = 0;
     while (!nome_ok) {
         printf("[?] informe o nova_moeda nome: ");
+		getchar();
 		fgets(nova_moeda.nome, sizeof(nova_moeda.nome), stdin);
-        getchar();
+		nova_moeda.nome[strcspn(nova_moeda.nome, "\n")] = '\0';
 
         nome_ok = 1;
 		for (int i = 0; i < *quantidade_moedas && nome_ok; i++) {
-			nome_ok &= strcmp(nova_moeda.nome, (*moedas[i]).nome);
+			nome_ok &= strcmp(nova_moeda.nome, (*moedas[i]).nome) != 0;
 		}
 		if (!nome_ok) puts("[e] nome ja cadastrado");
     }
@@ -224,11 +225,11 @@ void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros
     while (!apelido_ok) {
         printf("[?] informe o nova_moeda apelido: ");
 		fgets(nova_moeda.apelido, sizeof(nova_moeda.apelido), stdin);
-        getchar();
+		nova_moeda.apelido[strcspn(nova_moeda.apelido, "\n")] = '\0';
 
         apelido_ok = 1;
 		for (int i = 0; i < *quantidade_moedas && apelido_ok; i++) {
-			apelido_ok &= strcmp(nova_moeda.apelido, (*moedas[i]).apelido);
+			apelido_ok &= strcmp(nova_moeda.apelido, (*moedas[i]).apelido) != 0;
 		}
 		if (!apelido_ok) puts("[e] apelido ja cadastrado");
     }
@@ -238,9 +239,8 @@ void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros
         printf("[?] informe o nova taxa de compra: ");
 		receber(&nova_moeda.taxa_compra);
 
-		taxa_compra_ok = (maior(nova_moeda.taxa_compra, fracao_(0, 1)) || igual(nova_moeda.taxa_compra, fracao_(0, 1))) &&
-						 (menor(nova_moeda.taxa_compra, fracao_(1, 1)) || igual(nova_moeda.taxa_compra, fracao_(1, 1)));
-		if (!taxa_compra_ok) puts("[e] taxa de compra deve estar entre 0 e 1 inclusive");
+		taxa_compra_ok = maior(nova_moeda.taxa_compra, fracao_(0, 1)) && menor(nova_moeda.taxa_compra, fracao_(1, 1));
+		if (!taxa_compra_ok) puts("[e] taxa de compra deve estar entre 0 e 1 exclusive");
 	}
 
 	int taxa_venda_ok = 0;	
@@ -248,9 +248,8 @@ void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros
         printf("[?] informe o nova taxa de venda: ");
 		receber(&nova_moeda.taxa_venda);
 
-		taxa_venda_ok = (maior(nova_moeda.taxa_venda, fracao_(0, 1)) || igual(nova_moeda.taxa_venda, fracao_(0, 1))) &&
-						(menor(nova_moeda.taxa_venda, fracao_(1, 1)) || igual(nova_moeda.taxa_venda, fracao_(1, 1)));
-		if (!taxa_venda_ok) puts("[e] taxa de venda deve estar entre 0 e 1 inclusive");
+		taxa_venda_ok = maior(nova_moeda.taxa_venda, fracao_(0, 1)) && menor(nova_moeda.taxa_venda, fracao_(1, 1));
+		if (!taxa_venda_ok) puts("[e] taxa de venda deve estar entre 0 e 1 exclusive");
 	}
 
 	int valor_ok = 0;	
@@ -267,6 +266,8 @@ void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros
 		registros[i].carteira = realloc(registros[i].carteira, (*quantidade_moedas + 1) * sizeof(moeda));
 		registros[i].carteira[(*quantidade_moedas)] = fracao_(0, 1);
 	}
+
+	printf("[i] nova moeda: %s [%s]\n", nova_moeda.nome, nova_moeda.apelido);
     
     (*moedas)[*quantidade_moedas] = nova_moeda;
     (*quantidade_moedas)++;    
@@ -338,6 +339,7 @@ int main() {
 				retorno();
 				break;
 			case 3:
+				cadastrar_moeda(&moedas, &quantidade_moedas, registros, quantidade_registros);
 				retorno();
 				break;
 			case 4:

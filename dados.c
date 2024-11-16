@@ -79,8 +79,6 @@ void gravar_base(registro* registros, int quantidade_registros, int quantidade_m
     for (int i = 0; i < quantidade_registros; i++) {
         gravar_registro(&registros[i], base, quantidade_moedas);
     }
-    fclose(base);
-	free(registros);
 }
 
 moeda* ler_moedas(int* quantidade_moedas) {
