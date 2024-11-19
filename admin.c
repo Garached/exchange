@@ -204,6 +204,49 @@ registro* cadastrar_investidor(registro** registros, int* quantidade_registros, 
     return &(*registros)[(*quantidade_registros) - 1];
 }
 
+void excluir_investidor(registro** registros, int* quantidade_registros) {
+    puts("[i] investidores cadastrados:");
+    for (int i = 0; i < *quantidade_registros; i++) {
+        printf("   [%d] %s, %s\n", i + 1, (*registros)[i].cpf, (*registros)[i].nome);
+    }
+
+    int k, ok_k = 0;
+    while (!ok_k) {
+        printf("[?] informe o indice do investidor a ser excluido [1, %d]: ", *quantidade_registros);
+        scanf("%d", &k);
+
+        if (k >= 1 && k <= *quantidade_registros) {
+            ok_k = 1;
+        } else {
+            printf("[e] selecao invalida! informe um inteiro que pertence a [1, %d]\n", *quantidade_registros);
+        }
+    }
+
+    remove_kesimo((void**)registros, quantidade_registros, sizeof(registro), k - 1);
+}
+
+// TODO: so segfault nessa.
+void excluir_moeda(moeda** moedas, int* quantidade_moedas, registro** registros, int quantidade_registros) {
+    puts("[i] moedas cadastradas:");
+    for (int i = 0; i < *quantidade_moedas; i++) {
+        printf("   [%d] %s [%s]\n", i + 1, (*moedas)[i].nome, (*moedas)[i].apelido);
+    }
+
+    int k, ok_k = 0;
+    while (!ok_k) {
+        printf("[?] informe o indice da moeda a ser excluida [1, %d]: ", *quantidade_moedas);
+        scanf("%d", &k);
+
+        if (k >= 1 && k <= *quantidade_moedas) {
+            ok_k = 1;
+        } else {
+            printf("[e] selecao invalida! informe um inteiro que pertence a [1, %d]\n", *quantidade_moedas);
+        }
+    }
+
+    remove_kesimo((void**)moedas, quantidade_moedas, sizeof(moeda), k - 1);
+}
+
 void cadastrar_moeda(moeda** moedas, int* quantidade_moedas, registro* registros, int quantidade_registros) {
 	moeda nova_moeda;
 
@@ -336,6 +379,7 @@ int main() {
 				retorno();
 				break;
 			case 2:
+				excluir_investidor(&registros, &quantidade_registros);
 				retorno();
 				break;
 			case 3:
@@ -343,6 +387,7 @@ int main() {
 				retorno();
 				break;
 			case 4:
+				excluir_moeda(&moedas, &quantidade_moedas, &registros, quantidade_registros);
 				retorno();
 				break;
 			case 5: 

@@ -47,5 +47,7 @@ void gravar_base(registro* registros, int quantidade_registros, int quantidade_m
 moeda* ler_moedas(int* quantidade_moedas);
 void gravar_moedas(moeda* moedas, int quantidade_moedas);
 
+void remove_kesimo(void** vetor, int* quantidade, int tamanho, int k);
+
 #endif
 

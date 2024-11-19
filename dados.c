@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "fracao.h"
 #include "dados.h"
 typedef struct fracao fracao;
@@ -113,3 +114,16 @@ void gravar_moedas(moeda* moedas, int quantidade_moedas) {
     fclose(base);
 	free(moedas);
 }
+
+void remove_kesimo(void** vetor, int* quantidade, int tamanho, int k) {
+    char* base = (char*)(*vetor);
+    memmove(base + k * tamanho, base + (k + 1) * tamanho, (*quantidade - k - 1) * tamanho);
+
+    void* temp = realloc(*vetor, (*quantidade - 1) * tamanho);
+    if (temp != NULL || *quantidade == 1) {
+        *vetor = temp;
+    }
+
+	(*quantidade)--;
+}
+
